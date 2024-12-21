@@ -59,16 +59,3 @@ func (server *Server) Listen() {
 		go client.listen()
 	}
 }
-
-func New(address string) *Server {
-	log.Println("Starting new server instance. Accepting connection at:", address)
-	server := &Server{
-		address: address,
-	}
-
-	server.OnClientConnect(func(client *Client) {})
-	server.OnMessage(func(client *Client, message string) {})
-	server.OnClientDisconnect(func(client *Client, err error) {})
-
-	return server
-}

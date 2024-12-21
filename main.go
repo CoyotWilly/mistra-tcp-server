@@ -3,52 +3,49 @@ package main
 import (
 	"flag"
 	"log"
-	"net"
 	"strconv"
 )
 
 func main() {
-	mode := flag.String("mode", "server", "Application mode")
-	address := flag.String("address", "localhost", "Server address")
-	port := flag.Int("port", 8080, "Port to run the server on")
-	flag.Parse()
+	parseFlags()
 
-	app := *address + ":" + strconv.Itoa(*port)
-
-	if *mode == "server" {
-		server := New(app)
-
-		server.OnClientConnect(func(client *Client) {
-			log.Println("Client connected.")
-		})
-
-		server.OnMessage(func(client *Client, message string) {
-			log.Println("Received:", message)
-		})
-
-		server.OnClientDisconnect(func(client *Client, err error) {
-			log.Println("Disconnected:", client, err)
-		})
-
-		server.Listen()
-	} else if *mode == "client" {
-		log.Println("Running client application. Targeting server at address:", app)
-
-		conn, err := net.Dial("tcp", app)
-		if err != nil {
-			log.Fatal("Failed to connect to test server")
-		}
-
-		_, err = conn.Write([]byte("Test message\n"))
-		if err != nil {
-			log.Fatal("Failed to send test message.")
-		}
-
-		err = conn.Close()
-		if err != nil {
-			return
-		}
+	if ApplicationConfiguration.Mode == "server" {
+		StartMisraServer()
+	} else if ApplicationConfiguration.Mode == "client" {
+		DebugClient()
 	} else {
 		log.Panicln("Invalid mode. Possible options: SERVER | CLIENT")
+	}
+}
+
+func parseFlags() {
+	mode := flag.String("mode", "server", "Application mode")
+	init := flag.Bool("init", false, "Initialize token passing")
+	message := flag.Int("message", 0, "Message to send")
+
+	serverAddress := flag.String("serverAddress", "localhost", "Server address")
+	serverPort := flag.Int("serverPort", 5999, "Port to run the server on")
+
+	clientAddress := flag.String("clientAddress", "localhost", "Client data target server IP address")
+	clientPort := flag.Int("clientPort", 5998, "Client data target server port")
+	flag.Parse()
+
+	app := *serverAddress + ":" + strconv.Itoa(*serverPort)
+	clientApp := *clientAddress + ":" + strconv.Itoa(*clientPort)
+
+	ApplicationConfiguration = Configuration{
+		Mode:    *mode,
+		IsInit:  *init,
+		Message: strconv.Itoa(*message),
+		Server: Connection{
+			Address: *serverAddress,
+			Port:    *serverPort,
+			Binding: app,
+		},
+		Client: Connection{
+			Address: *clientAddress,
+			Port:    *clientPort,
+			Binding: clientApp,
+		},
 	}
 }
