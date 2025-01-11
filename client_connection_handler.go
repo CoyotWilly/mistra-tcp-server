@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net"
+	"strings"
 )
 
 func (client *Client) listen() {
@@ -14,8 +15,10 @@ func (client *Client) listen() {
 	for {
 		message, err := reader.ReadString('\n')
 		if err != nil {
+			log.Println("[ERROR] Couldn't read message:", message, err)
 			err := client.connection.Close()
 			if err != nil {
+				log.Println("[ERROR] Couldn't close connection:", err)
 				return
 			}
 
@@ -24,7 +27,7 @@ func (client *Client) listen() {
 			return
 		}
 
-		client.Server.onMessage(client, message)
+		client.Server.onMessage(client, strings.TrimSpace(message))
 	}
 }
 

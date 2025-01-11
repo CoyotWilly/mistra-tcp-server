@@ -1,6 +1,10 @@
 package main
 
-import "log"
+import (
+	"log"
+	"math"
+	"strconv"
+)
 
 func (client *Client) Send(message string) error {
 	return client.SendBytes([]byte(message))
@@ -20,4 +24,14 @@ func (client *Client) SendBytes(message []byte) error {
 	}
 
 	return err
+}
+
+func Dispatch(msg string) float64 {
+	value, err := strconv.ParseFloat(msg, TokenValueConversionBase)
+	if err != nil {
+		log.Println("[ERROR] Failed to parse value:", msg)
+		return math.SmallestNonzeroFloat64
+	}
+
+	return value
 }
