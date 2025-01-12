@@ -17,8 +17,4 @@ func SendMessage(connection net.Conn, message string) {
 	if err != nil {
 		log.Fatal("[ERROR] Failed to send message", err)
 	}
-
-	if message == "-2" {
-		SendMessage(connection, "-2")
-	}
 }

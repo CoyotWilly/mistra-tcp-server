@@ -51,6 +51,7 @@ func (server *Server) Listen() {
 			log.Fatalf("[ERROR] Error closing TCP listener %s\n", err)
 		}
 	}(listener)
+	log.Printf("[INFO] Server ready to accept connections on %s\n", server.address)
 
 	for {
 		conn, _ := listener.Accept()
@@ -64,7 +65,8 @@ func (server *Server) Listen() {
 	}
 }
 
-func New(address string) *Server {
+func NewServer() *Server {
+	address := ApplicationConfiguration.Server.Binding
 	log.Println("[INFO] Starting new server instance. Accepting connection at:", address)
 	server := &Server{
 		address: address,
