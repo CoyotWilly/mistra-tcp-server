@@ -40,7 +40,6 @@ func (misra *Misra) Incarnate(message float64) {
 }
 
 func (misra *Misra) Handle(value float64) {
-	fix := false
 	switch misra.State {
 	case None:
 		if value != math.SmallestNonzeroFloat64 {
@@ -52,7 +51,7 @@ func (misra *Misra) Handle(value float64) {
 		time.Sleep(ApplicationConfiguration.SleepTime)
 		log.Println("[INFO] Leaving critical section...")
 		if value != math.SmallestNonzeroFloat64 {
-			fix = misra.Consume(value)
+			misra.Consume(value)
 		} else {
 			misra.Produce(PingToken)
 		}
@@ -66,10 +65,6 @@ func (misra *Misra) Handle(value float64) {
 		misra.Produce(PingToken)
 		misra.Produce(PongToken)
 		break
-	}
-
-	if fix {
-		misra.Handle(value)
 	}
 }
 
