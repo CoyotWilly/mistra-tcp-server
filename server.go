@@ -33,7 +33,9 @@ func StartServer(connection chan net.Conn) {
 
 	server.OnMessage(func(client *Client, message string) {
 		log.Println("Received:", message)
-		misra.Connection = <-connection
+		if misra.Connection == nil {
+			misra.Connection = <-connection
+		}
 		misra.Handle(Dispatch(message))
 	})
 

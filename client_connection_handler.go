@@ -42,13 +42,13 @@ func (server *Server) Listen() {
 	}
 
 	if err != nil {
-		log.Fatalf("Error starting TCP server on %s with %s\n", server.address, err)
+		log.Fatalf("[ERROR] Error starting TCP server on %s with %s\n", server.address, err)
 	}
 
 	defer func(listener net.Listener) {
 		err := listener.Close()
 		if err != nil {
-			log.Fatalf("Error closing TCP listener %s\n", err)
+			log.Fatalf("[ERROR] Error closing TCP listener %s\n", err)
 		}
 	}(listener)
 
@@ -59,12 +59,13 @@ func (server *Server) Listen() {
 			Server:     server,
 		}
 
+		log.Println("[INFO] New connection from", conn.RemoteAddr().String())
 		go client.listen()
 	}
 }
 
 func New(address string) *Server {
-	log.Println("Starting new server instance. Accepting connection at:", address)
+	log.Println("[INFO] Starting new server instance. Accepting connection at:", address)
 	server := &Server{
 		address: address,
 	}

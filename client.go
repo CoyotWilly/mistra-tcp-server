@@ -21,7 +21,7 @@ func StartClientAsync() chan net.Conn {
 
 func StartClient() net.Conn {
 	app := ApplicationConfiguration.Client.Binding
-	log.Println("Running client application. Targeting server at address:", app)
+	log.Println("[INFO] Running client application. Targeting server at address:", app)
 
 	var conn net.Conn
 	var err error
