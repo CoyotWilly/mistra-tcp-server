@@ -26,64 +26,72 @@ func NewMisra() *Misra {
 
 func (misra *Misra) Regenerate() {
 	log.Printf("[INFO] Regenerating tokens..")
-	misra.State = Both
-	misra.Ping = math.Abs(misra.Ping) + 1
+	misra.Ping = math.Abs(misra.Ping)
 	misra.Pong = -misra.Ping
-	log.Printf("[INFO] Recreated tokens ping: %v | pong: %v\n", misra.Ping, misra.Pong)
+	misra.State = Both
+	log.Printf("[INFO] Recreated tokens ping: %v | pong: %v | state: %s\n", misra.Ping, misra.Pong, misra.State.String())
 }
 
 func (misra *Misra) Incarnate(message float64) {
 	log.Println("[ERROR] Incarnate token")
 	misra.Ping = math.Abs(message) + 1
 	misra.Pong = -misra.Ping
-	log.Printf("[INFO] Incarnated token ping: %v | pong: %v\n", misra.Ping, misra.Pong)
+	log.Printf("[INFO] Incarnated token ping: %v | pong: %v | state: %s\n", misra.Ping, misra.Pong, misra.State.String())
 }
 
 func (misra *Misra) Handle(value float64) {
-	switch misra.State {
-	case None:
-		if value != math.SmallestNonzeroFloat64 {
-			misra.Consume(value)
-		}
-		break
-	case Ping:
-		log.Println("[INFO] Entering critical section...")
-		time.Sleep(ApplicationConfiguration.SleepTime)
-		log.Println("[INFO] Leaving critical section...")
-		if value != math.SmallestNonzeroFloat64 {
-			misra.Consume(value)
-		} else {
+	repeat := true
+
+	for repeat {
+		switch misra.State {
+		case None:
+			if value != math.SmallestNonzeroFloat64 {
+				misra.Consume(value)
+				repeat = false
+			}
+			break
+		case Ping:
+			log.Println("[INFO] Entering critical section...")
+			time.Sleep(ApplicationConfiguration.SleepTime)
+			log.Println("[INFO] Leaving critical section...")
+			if value != math.SmallestNonzeroFloat64 {
+				misra.Consume(value)
+				repeat = misra.State == Both || misra.State == Pong
+			} else {
+				misra.Produce(PingToken)
+			}
+			break
+		case Pong:
+			misra.Produce(PongToken)
+			repeat = false
+			break
+		case Both:
+			log.Println("[ERROR] Both tokens held, processing incarnation...")
+			misra.Incarnate(misra.Ping)
 			misra.Produce(PingToken)
+			misra.Produce(PongToken)
+			repeat = false
+			break
 		}
-		break
-	case Pong:
-		misra.Produce(PongToken)
-		break
-	case Both:
-		log.Println("[ERROR] Both tokens held, processing incarnation...")
-		misra.Incarnate(misra.Ping)
-		misra.Produce(PingToken)
-		misra.Produce(PongToken)
-		break
 	}
 }
 
-func (misra *Misra) Consume(value float64) bool {
+func (misra *Misra) Consume(value float64) {
 	val := math.Abs(value)
 	if math.Abs(misra.Last) > val {
 		log.Println("[INFO] Junk received, skipping...")
-		return false
+		return
 	}
 
-	if misra.Last == value && value > 0 {
+	if misra.Last == value && misra.Last > Init {
 		log.Println("[INFO] Oops something went wrong, PONG has been lost")
 		misra.Regenerate()
-	} else if misra.Last == value && value < 0 {
+	} else if misra.Last == value && misra.Last < Init {
 		log.Println("[INFO] Oops something went wrong, PING has been lost")
 		misra.Regenerate()
 	}
 
-	if value > 0 {
+	if value > Init {
 		misra.Ping = value
 		misra.Pong = -misra.Ping
 
@@ -98,9 +106,9 @@ func (misra *Misra) Consume(value float64) bool {
 			log.Println("[ERROR] Invalid state for PING token")
 			break
 		}
-	} else if value < 0 {
-		misra.Pong = value
+	} else if value < Init {
 		misra.Ping = val
+		misra.Pong = value
 
 		switch misra.State {
 		case None:
@@ -115,8 +123,7 @@ func (misra *Misra) Consume(value float64) bool {
 		}
 	}
 
-	log.Println("[INFO] Consumed token value:", value)
-	return misra.State == Both
+	log.Printf("[INFO] Consumed token value: %.0f | type %s\n", value, misra.State.String())
 }
 
 func (misra *Misra) Produce(tokenType int) {
@@ -141,5 +148,5 @@ func (misra *Misra) Produce(tokenType int) {
 		}
 	}
 
-	log.Printf("[INFO] Produced token type: %v\n", tokenType)
+	log.Printf("[INFO] Produced token type: %s\n", ToTokenString(tokenType))
 }

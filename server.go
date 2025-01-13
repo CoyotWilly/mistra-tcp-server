@@ -20,20 +20,25 @@ func StartServer(connection chan net.Conn) {
 	server := NewServer()
 
 	server.OnClientConnect(func(client *Client) {
-		log.Println("[INFO] Connection connected.")
+		log.Println("[INFO] Connection connected")
 		if broker == nil {
 			broker = <-connection
 		}
 
 		if ApplicationConfiguration.Mode == "initiator" {
-			SendInit(broker)
+			log.Println("[INFO] Application lunched in INITIATOR mode")
+			misra.State = Both
+			misra.Connection = broker
+			misra.Produce(PingToken)
+			misra.Produce(PongToken)
 		}
 	})
 
 	server.OnMessage(func(client *Client, message string) {
 		log.Println("[INFO] Received:", message)
-		SendMessage(broker, message)
-		misra.Connection = broker
+		if misra.Connection == nil {
+			misra.Connection = broker
+		}
 		misra.Handle(Dispatch(message))
 	})
 

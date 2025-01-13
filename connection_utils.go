@@ -7,7 +7,6 @@ import (
 )
 
 func SendMessageFloat(connection net.Conn, message float64) {
-	log.Printf("[INFO] Sending message %.0f", message)
 	SendMessage(connection, fmt.Sprintf("%.0f", message))
 }
 

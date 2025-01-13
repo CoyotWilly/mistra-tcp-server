@@ -32,16 +32,11 @@ func StartClient() net.Conn {
 		if err == nil {
 			break
 		}
-		log.Printf("Failed to connect to server (attempt %d/999999), retrying in %v seconds...",
+		log.Printf("[ERROR] Failed to connect to server (attempt %d/999999), retrying in %v seconds...",
 			attempt, ApplicationConfiguration.SleepTime.Seconds())
 		attempt++
 		time.Sleep(ApplicationConfiguration.SleepTime)
 	}
 
 	return conn
-}
-
-func SendInit(conn net.Conn) {
-	SendMessageFloat(conn, PingToken)
-	SendMessageFloat(conn, PongToken)
 }
