@@ -12,7 +12,7 @@ var ApplicationConfiguration Configuration
 type Configuration struct {
 	Mode            string
 	SleepTime       time.Duration
-	LoseProbability float64
+	LossProbability float64
 	Server          Connection
 	Client          Connection
 }
@@ -33,11 +33,11 @@ func (config Configuration) Init() {
 	clientAddress := flag.String("clientAddress", "localhost", "Destination server address - the address of the destination server where all the message will be sent")
 	clientPort := flag.Int("clientPort", 5998, "Destination server port")
 
-	limit := flag.Float64("limit", 0.7, "Chance of losing token, token will be lost if value bigger than value. Range [0; 1]")
+	loss := flag.Float64("loss", 0, "Chance of losing token, token will be lost if value bigger than value. Range [0; 1]")
 
 	flag.Parse()
 
-	if !(*limit >= float64(0) && *limit <= float64(1)) {
+	if !(*loss >= float64(0) && *loss <= float64(1)) {
 		log.Fatalf("Limit value not in range [0,1]")
 	}
 
@@ -47,7 +47,7 @@ func (config Configuration) Init() {
 	ApplicationConfiguration = Configuration{
 		Mode:            *mode,
 		SleepTime:       time.Duration(*sleep) * time.Second,
-		LoseProbability: *limit,
+		LossProbability: *loss,
 		Server: Connection{
 			Address: *serverAddress,
 			Port:    *serverPort,

@@ -47,23 +47,10 @@ func (misra *Misra) Handle(value float64) {
 		switch misra.State {
 		case None:
 			if value != math.SmallestNonzeroFloat64 {
+				log.Println("[DEBUG] CONSUME NONE TOKEN STATE")
 				misra.Consume(value)
-				repeat = false
 			}
-			break
 		case Ping:
-			if rand.Float64() > ApplicationConfiguration.LoseProbability {
-				log.Println("[INFO] Losing token...")
-				misra.Last = misra.Ping
-
-				if misra.State == Ping {
-					misra.State = None
-				} else if misra.State == Both {
-					misra.State = Pong
-				}
-				break
-			}
-
 			log.Println("[INFO] Entering critical section...")
 			time.Sleep(ApplicationConfiguration.SleepTime)
 			log.Println("[INFO] Leaving critical section...")
@@ -73,18 +60,16 @@ func (misra *Misra) Handle(value float64) {
 			} else {
 				misra.Produce(PingToken)
 			}
-			break
 		case Pong:
+			log.Println("[DEBUG] PRODUCE TOKEN STATE: Pong")
 			misra.Produce(PongToken)
 			repeat = false
-			break
 		case Both:
 			log.Println("[ERROR] Both tokens held, processing incarnation...")
 			misra.Incarnate(misra.Ping)
 			misra.Produce(PingToken)
 			misra.Produce(PongToken)
 			repeat = false
-			break
 		}
 	}
 }
@@ -141,7 +126,13 @@ func (misra *Misra) Consume(value float64) {
 
 func (misra *Misra) Produce(tokenType int) {
 	if tokenType == PingToken {
-		SendMessageFloat(misra.Connection, misra.Ping)
+		rng := rand.Float64()
+		if rng > ApplicationConfiguration.LossProbability {
+			SendMessageFloat(misra.Connection, misra.Ping)
+		} else {
+			log.Println("[WARN] Losing token...")
+		}
+
 		misra.Last = misra.Ping
 
 		if misra.State == Ping {
@@ -162,4 +153,23 @@ func (misra *Misra) Produce(tokenType int) {
 	}
 
 	log.Printf("[INFO] Produced token type: %s\n", ToTokenString(tokenType))
+}
+
+func (misra *Misra) TryInitiate(broker chan net.Conn) {
+	if ApplicationConfiguration.Mode != "initiator" {
+		return
+	}
+
+	for {
+		log.Println("[INFO] Waiting for connection...")
+		con := <-broker
+		if con != nil {
+			log.Println("[INFO] Application lunched in INITIATOR mode")
+			misra.State = Both
+			misra.Connection = con
+			misra.Produce(PingToken)
+			misra.Produce(PongToken)
+			break
+		}
+	}
 }

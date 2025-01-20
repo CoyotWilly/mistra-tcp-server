@@ -17,7 +17,7 @@ type Server struct {
 func StartServer(connection chan net.Conn) {
 	misra := NewMisra()
 	server := NewServer()
-	go misra.tryInitiate(connection)
+	go misra.TryInitiate(connection)
 
 	server.OnClientConnect(func(client *Client) {
 		log.Println("[INFO] Client connection established")
@@ -36,23 +36,4 @@ func StartServer(connection chan net.Conn) {
 	})
 
 	server.Listen()
-}
-
-func (misra *Misra) tryInitiate(broker chan net.Conn) {
-	if ApplicationConfiguration.Mode != "initiator" {
-		return
-	}
-
-	for {
-		log.Println("[INFO] Waiting for connection...")
-		con := <-broker
-		if con != nil {
-			log.Println("[INFO] Application lunched in INITIATOR mode")
-			misra.State = Both
-			misra.Connection = con
-			misra.Produce(PingToken)
-			misra.Produce(PongToken)
-			break
-		}
-	}
 }
