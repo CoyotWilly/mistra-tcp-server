@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"strconv"
 	"time"
 )
@@ -9,10 +10,11 @@ import (
 var ApplicationConfiguration Configuration
 
 type Configuration struct {
-	Mode      string
-	SleepTime time.Duration
-	Server    Connection
-	Client    Connection
+	Mode            string
+	SleepTime       time.Duration
+	LoseProbability float64
+	Server          Connection
+	Client          Connection
 }
 
 type Connection struct {
@@ -31,14 +33,21 @@ func (config Configuration) Init() {
 	clientAddress := flag.String("clientAddress", "localhost", "Destination server address - the address of the destination server where all the message will be sent")
 	clientPort := flag.Int("clientPort", 5998, "Destination server port")
 
+	limit := flag.Float64("limit", 0.7, "Chance of losing token, token will be lost if value bigger than value. Range [0; 1]")
+
 	flag.Parse()
+
+	if !(*limit >= float64(0) && *limit <= float64(1)) {
+		log.Fatalf("Limit value not in range [0,1]")
+	}
 
 	server := *serverAddress + ":" + strconv.Itoa(*serverPort)
 	app := *clientAddress + ":" + strconv.Itoa(*clientPort)
 
 	ApplicationConfiguration = Configuration{
-		Mode:      *mode,
-		SleepTime: time.Duration(*sleep) * time.Second,
+		Mode:            *mode,
+		SleepTime:       time.Duration(*sleep) * time.Second,
+		LoseProbability: *limit,
 		Server: Connection{
 			Address: *serverAddress,
 			Port:    *serverPort,

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"math"
+	"math/rand"
 	"net"
 	"strings"
 	"time"
@@ -51,6 +52,18 @@ func (misra *Misra) Handle(value float64) {
 			}
 			break
 		case Ping:
+			if rand.Float64() > ApplicationConfiguration.LoseProbability {
+				log.Println("[INFO] Losing token...")
+				misra.Last = misra.Ping
+
+				if misra.State == Ping {
+					misra.State = None
+				} else if misra.State == Both {
+					misra.State = Pong
+				}
+				break
+			}
+
 			log.Println("[INFO] Entering critical section...")
 			time.Sleep(ApplicationConfiguration.SleepTime)
 			log.Println("[INFO] Leaving critical section...")
